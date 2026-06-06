@@ -19,7 +19,7 @@ export default [
           ignoreCase: true,
         },
       ],
-      "astro/no-unused-css-selector": "warn",
+      "astro/no-unused-css-selector": "off",
       "astro/semi": ["error", "always"],
     },
   },
