@@ -1,0 +1,57 @@
+---
+
+---
+
+<div class="view-toggle">
+  <button aria-label="Grid view" class="view-btn active" data-view="grid">
+    <svg fill="none" height="16" viewBox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
+      <rect height="6" rx="1" stroke="currentColor" stroke-width="1.5" width="6" x="1" y="1"></rect>
+      <rect height="6" rx="1" stroke="currentColor" stroke-width="1.5" width="6" x="9" y="1"></rect>
+      <rect height="6" rx="1" stroke="currentColor" stroke-width="1.5" width="6" x="1" y="9"></rect>
+      <rect height="6" rx="1" stroke="currentColor" stroke-width="1.5" width="6" x="9" y="9"></rect>
+    </svg>
+  </button>
+  <button aria-label="List view" class="view-btn" data-view="list">
+    <svg fill="none" height="16" viewBox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
+      <rect height="3" rx="1" stroke="currentColor" stroke-width="1.5" width="14" x="1" y="2"
+      ></rect>
+      <rect height="3" rx="1" stroke="currentColor" stroke-width="1.5" width="14" x="1" y="7"
+      ></rect>
+      <rect height="3" rx="1" stroke="currentColor" stroke-width="1.5" width="14" x="1" y="12"
+      ></rect>
+    </svg>
+  </button>
+</div>
+
+<style>
+  .view-toggle {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .view-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all var(--duration-fast) var(--ease-out);
+  }
+  .view-btn:hover {
+    color: var(--text-primary);
+    background: var(--surface-raised);
+  }
+  .view-btn.active {
+    color: var(--black);
+    background: var(--text-display);
+  }
+  .view-btn + .view-btn {
+    border-left: 1px solid var(--border);
+  }
+</style>

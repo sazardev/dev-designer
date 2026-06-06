@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import type { ImageMetadata } from "astro";
+import { ClientRouter } from "astro:transitions";
 import FallbackImage from "../assets/blog-placeholder-1.jpg";
 import { SITE_TITLE } from "../consts";
 
@@ -67,3 +68,6 @@ const { title, description, image = FallbackImage } = Astro.props;
 <meta content={title} property="twitter:title" />
 <meta content={description} property="twitter:description" />
 <meta content={new URL(image.src, Astro.url)} property="twitter:image" />
+
+<!-- View Transitions -->
+<ClientRouter />

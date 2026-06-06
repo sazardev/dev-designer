@@ -1,0 +1,300 @@
+---
+title: "Principios SOLID en Accion"
+description: "Cinco principios de diseno orientado a objetos aplicados en TypeScript moderno"
+pubDate: "2024-08-01"
+heroImage: "../../../assets/blog-placeholder-5.jpg"
+locale: "es"
+author: "dev-design"
+tags: ["typescript", "solid", "architecture", "design-patterns", "clean-code"]
+category: "architecture"
+difficulty: "advanced"
+featured: true
+relatedPosts: ["clean-architecture", "repository-pattern"]
+---
+
+## Los Cinco Principios
+
+SOLID es un acronimo que agrupa cinco principios de diseno orientado a objetos propuestos por Robert C. Martin. Estos principios guian la construccion de sistemas mantenibles, flexibles y escalables.
+
+## 1. Single Responsibility Principle
+
+> Una clase debe tener una unica razon para cambiar.
+
+```typescript
+// VIOLACION: La clase hace demasiadas cosas
+class UserManager {
+  createUser(data: UserData): User {
+    /* ... */
+  }
+  sendEmail(to: string, subject: string): void {
+    /* ... */
+  }
+  generateReport(users: User[]): string {
+    /* ... */
+  }
+}
+
+// CORRECCION: Cada clase tiene una responsabilidad
+class UserService {
+  constructor(private userRepo: UserRepository) {}
+
+  createUser(data: UserData): Promise<User> {
+    return this.userRepo.save(data);
+  }
+}
+
+class EmailService {
+  constructor(private mailer: Mailer) {}
+
+  sendWelcome(to: string): Promise<void> {
+    return this.mailer.send({ to, subject: "Welcome" });
+  }
+}
+
+class ReportService {
+  generateUserReport(users: User[]): string {
+    return users.map((u) => `${u.name}: ${u.email}`).join("\n");
+  }
+}
+```
+
+## 2. Open/Closed Principle
+
+> Las entidades de software deben estar abiertas para extension, pero cerradas para modificacion.
+
+```typescript
+// VIOLACION: Agregar un tipo requiere modificar el switch
+function calculateDiscount(type: string, amount: number): number {
+  switch (type) {
+    case "regular":
+      return amount * 0.05;
+    case "premium":
+      return amount * 0.1;
+    case "vip":
+      return amount * 0.2;
+    default:
+      return 0;
+  }
+}
+
+// CORRECCION: Extender sin modificar
+interface DiscountStrategy {
+  calculate(amount: number): number;
+}
+
+class RegularDiscount implements DiscountStrategy {
+  calculate(amount: number): number {
+    return amount * 0.05;
+  }
+}
+
+class PremiumDiscount implements DiscountStrategy {
+  calculate(amount: number): number {
+    return amount * 0.1;
+  }
+}
+
+class VipDiscount implements DiscountStrategy {
+  calculate(amount: number): number {
+    return amount * 0.2;
+  }
+}
+
+class DiscountCalculator {
+  private strategies: Map<string, DiscountStrategy> = new Map();
+
+  register(type: string, strategy: DiscountStrategy): void {
+    this.strategies.set(type, strategy);
+  }
+
+  calculate(type: string, amount: number): number {
+    const strategy = this.strategies.get(type);
+    return strategy ? strategy.calculate(amount) : 0;
+  }
+}
+```
+
+## 3. Liskov Substitution Principle
+
+> Los objetos de una clase derivada deben poder sustituir a los de su clase base sin alterar la correccion del programa.
+
+```typescript
+// VIOLACION: Rectangulo no se puede sustituir por Cuadrado
+class Rectangle {
+  constructor(
+    protected width: number,
+    protected height: number,
+  ) {}
+  setWidth(w: number) {
+    this.width = w;
+  }
+  setHeight(h: number) {
+    this.height = h;
+  }
+  area(): number {
+    return this.width * this.height;
+  }
+}
+
+class Square extends Rectangle {
+  setWidth(w: number) {
+    this.width = w;
+    this.height = w;
+  }
+  setHeight(h: number) {
+    this.width = h;
+    this.height = h;
+  }
+}
+
+// CORRECCION: Usar composicion en lugar de herencia
+interface Shape {
+  area(): number;
+}
+
+class RectangleShape implements Shape {
+  constructor(
+    private width: number,
+    private height: number,
+  ) {}
+  area(): number {
+    return this.width * this.height;
+  }
+}
+
+class SquareShape implements Shape {
+  constructor(private side: number) {}
+  area(): number {
+    return this.side * this.side;
+  }
+}
+
+function printArea(shape: Shape): void {
+  console.log(`Area: ${shape.area()}`);
+}
+```
+
+## 4. Interface Segregation Principle
+
+> Los clientes no deben verse obligados a depender de interfaces que no utilizan.
+
+```typescript
+// VIOLACION: Interfaz demasiado grande
+interface Worker {
+  work(): void;
+  eat(): void;
+  sleep(): void;
+  code(): void;
+}
+
+// CORRECCION: Interfaces pequenas y especificas
+interface Workable {
+  work(): void;
+}
+
+interface Eatable {
+  eat(): void;
+}
+
+interface Sleepable {
+  sleep(): void;
+}
+
+interface Codeable {
+  code(): void;
+}
+
+class Developer implements Workable, Sleepable, Codeable {
+  work() {
+    /* ... */
+  }
+  sleep() {
+    /* ... */
+  }
+  code() {
+    /* ... */
+  }
+}
+
+class Robot implements Workable, Codeable {
+  work() {
+    /* ... */
+  }
+  code() {
+    /* ... */
+  }
+}
+```
+
+## 5. Dependency Inversion Principle
+
+> Los modulos de alto nivel no deben depender de modulos de bajo nivel. Ambos deben depender de abstracciones.
+
+```typescript
+// VIOLACION: Servicio depende de implementacion concreta
+class MySQLDatabase {
+  query(sql: string) {
+    /* ... */
+  }
+}
+
+class UserService {
+  private db = new MySQLDatabase(); // Dependencia concreta
+
+  getUser(id: string) {
+    return this.db.query(`SELECT * FROM users WHERE id = '${id}'`);
+  }
+}
+
+// CORRECCION: Ambos dependen de abstracciones
+interface Database {
+  query<T>(sql: string): Promise<T>;
+}
+
+class MySQLDatabase implements Database {
+  async query<T>(sql: string): Promise<T> {
+    /* ... */
+  }
+}
+
+class PostgresDatabase implements Database {
+  async query<T>(sql: string): Promise<T> {
+    /* ... */
+  }
+}
+
+class UserService {
+  constructor(private db: Database) {} // Dependencia abstracta
+
+  async getUser(id: string) {
+    return this.db.query<User>(`SELECT * FROM users WHERE id = '${id}'`);
+  }
+}
+```
+
+## Flujo de Decision
+
+```mermaid
+flowchart TD
+    A[Escribes codigo] --> B{Tiene una sola responsabilidad?}
+    B -->|No| C[Refactorizar en clases mas pequenas]
+    B -->|Si| D[Puedes extender sin modificar?}
+    D -->|No| E[Usar interfaces y estrategias]
+    D -->|Si| F[Se puede sustituir sin romper?]
+    F -->|No| G[Usar composicion en vez de herencia]
+    F -->|Si| H[El cliente usa todo el interfaz?]
+    H -->|No| I[Segmentar interfaces]
+    H -->|Si| J[Depende de abstracciones?]
+    J -->|No| K[Inyectar dependencias via interfaces]
+    J -->|Si| L[Cumple SOLID]
+```
+
+## Resumen
+
+| Principio | Regla                          | Herramienta                |
+| --------- | ------------------------------ | -------------------------- |
+| **S**RP   | Una clase, una responsabilidad | Separar en servicios       |
+| **O**CP   | Extender sin modificar         | Strategy, Plugin system    |
+| **L**SP   | Sustituibilidad de subtipos    | Composicion sobre herencia |
+| **I**SP   | Interfaces pequenas            | Interface segregation      |
+| **D**IP   | Depender de abstracciones      | Inyeccion de dependencias  |

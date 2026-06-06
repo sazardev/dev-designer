@@ -1,0 +1,142 @@
+---
+interface Props {
+  author: string;
+  locale: string;
+}
+
+const { author, locale } = Astro.props;
+
+// Import author data
+const authorModules = import.meta.glob<{
+  frontmatter: {
+    name: string;
+    bio?: string;
+    avatar?: string;
+    locale: string;
+    social?: { github?: string; twitter?: string; linkedin?: string };
+  };
+}>("../content/authors/**/*.md", { eager: true });
+
+let authorData: {
+  name: string;
+  bio?: string;
+  avatar?: string;
+  social?: { github?: string; twitter?: string; linkedin?: string };
+} | null = null;
+
+for (const [path, mod] of Object.entries(authorModules)) {
+  const fm = mod.frontmatter;
+  if (
+    fm.locale === locale &&
+    (path.includes(`/${author}.md`) || path.includes(`/${author}/index.md`))
+  ) {
+    authorData = fm;
+    break;
+  }
+}
+---
+
+{
+  authorData && (
+    <div class="author-card">
+      <div class="author-info">
+        <span class="author-label">ESCRITO POR</span>
+        <span class="author-name">{authorData.name}</span>
+        {authorData.bio && <p class="author-bio">{authorData.bio}</p>}
+      </div>
+      {authorData.social && (
+        <div class="author-social">
+          {authorData.social.github && (
+            <a
+              class="social-link"
+              href={`https://github.com/${authorData.social.github}`}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              GH
+            </a>
+          )}
+          {authorData.social.twitter && (
+            <a
+              class="social-link"
+              href={`https://twitter.com/${authorData.social.twitter}`}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              TW
+            </a>
+          )}
+          {authorData.social.linkedin && (
+            <a
+              class="social-link"
+              href={`https://linkedin.com/in/${authorData.social.linkedin}`}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              LI
+            </a>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+<style>
+  .author-card {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: var(--space-2xl);
+  }
+  .author-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+  }
+  .author-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-disabled);
+  }
+  .author-name {
+    font-family: var(--font-body);
+    font-size: var(--body);
+    font-weight: 500;
+    color: var(--text-display);
+  }
+  .author-bio {
+    margin: 0;
+    font-size: var(--body-sm);
+    color: var(--text-secondary);
+    max-width: 400px;
+  }
+  .author-social {
+    display: flex;
+    gap: var(--space-xs);
+  }
+  .social-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-decoration: none;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    transition: all var(--duration-fast) var(--ease-out);
+  }
+  .social-link:hover {
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+  }
+</style>

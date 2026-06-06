@@ -1,0 +1,270 @@
+---
+title: "TypeScript Generics: Guia Avanzada"
+description: "Tipos genericos, restricciones, condicionales y utilidades para codigo reutilizable y type-safe"
+pubDate: "2024-07-25"
+heroImage: "../../../assets/blog-placeholder-1.jpg"
+locale: "es"
+author: "sarah-chen"
+tags: ["typescript", "generics", "type-system", "advanced-types"]
+category: "tutorial"
+difficulty: "advanced"
+featured: false
+relatedPosts: ["clean-architecture", "solid-principles"]
+---
+
+## Que son los Generics
+
+Los generics permiten crear componentes reutilizables que funcionan con multiples tipos mientras mantienen la seguridad de tipos. Son el equivalente a los parametros de tipo en lugar de parametros de valor.
+
+## Fundamentos
+
+```typescript
+// Funcion generica basica
+function identity<T>(value: T): T {
+  return value;
+}
+
+const num = identity(42); // tipo: number
+const str = identity("hello"); // tipo: string
+const arr = identity([1, 2, 3]); // tipo: number[]
+```
+
+## Restricciones con extends
+
+```typescript
+// Restringir genericos a ciertas propiedades
+interface HasLength {
+  length: number;
+}
+
+function logLength<T extends HasLength>(value: T): T {
+  console.log(`Length: ${value.length}`);
+  return value;
+}
+
+logLength("hello"); // OK: string tiene .length
+logLength([1, 2, 3]); // OK: array tiene .length
+logLength({ length: 10 }); // OK: tiene .length
+// logLength(42);         // ERROR: number no tiene .length
+```
+
+## Genericos en Interfaces
+
+```typescript
+// Contenedor generico
+interface Container<T> {
+  value: T;
+  getValue(): T;
+  setValue(value: T): void;
+}
+
+class NumberContainer implements Container<number> {
+  constructor(private _value: number) {}
+
+  get value(): number {
+    return this._value;
+  }
+  getValue(): number {
+    return this._value;
+  }
+  setValue(value: number): void {
+    this._value = value;
+  }
+}
+
+// API Response generica
+interface ApiResponse<T> {
+  data: T;
+  status: number;
+  message: string;
+  timestamp: Date;
+}
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+async function fetchUser(id: string): Promise<ApiResponse<User>> {
+  const response = await fetch(`/api/users/${id}`);
+  return response.json();
+}
+
+const result = await fetchUser("123");
+// result.data es tipo User
+```
+
+## Genericos en Clases
+
+```typescript
+// Stack generico
+class Stack<T> {
+  private items: T[] = [];
+
+  push(item: T): void {
+    this.items.push(item);
+  }
+
+  pop(): T | undefined {
+    return this.items.pop();
+  }
+
+  peek(): T | undefined {
+    return this.items[this.items.length - 1];
+  }
+
+  isEmpty(): boolean {
+    return this.items.length === 0;
+  }
+
+  size(): number {
+    return this.items.length;
+  }
+}
+
+const numberStack = new Stack<number>();
+numberStack.push(1);
+numberStack.push(2);
+// numberStack.push("3"); // ERROR: string no asignable a number
+```
+
+## Genericos Restringidos
+
+```typescript
+// Obtener tipo de propiedad anidada
+type NestedValue<T, K extends keyof T> = T[K];
+
+interface User {
+  name: string;
+  address: {
+    city: string;
+    zip: string;
+  };
+}
+
+type UserName = NestedValue<User, "name">; // string
+type UserCity = NestedValue<User, "address">; // { city: string; zip: string }
+
+// Genericos con keyof
+function getProperty<T, K extends keyof T>(obj: T, key: K): T[K] {
+  return obj[key];
+}
+
+const user: User = { name: "John", address: { city: "NY", zip: "10001" } };
+const name = getProperty(user, "name"); // string
+const city = getProperty(user, "address"); // { city: string; zip: string }
+```
+
+## Tipos Condicionales
+
+```typescript
+// Tipo condicional
+type IsString<T> = T extends string ? true : false;
+
+type A = IsString<"hello">; // true
+type B = IsString<42>; // false
+
+// Extraer tipo de retorno de funcion
+type ReturnOf<T> = T extends (...args: any[]) => infer R ? R : never;
+
+function createUser() {
+  return { id: 1, name: "John" };
+}
+
+type UserType = ReturnOf<typeof createUser>; // { id: number; name: string }
+
+// Inferir tipo de Promise
+type UnwrapPromise<T> = T extends Promise<infer U> ? U : T;
+
+type Result = UnwrapPromise<Promise<string>>; // string
+type Plain = UnwrapPromise<number>; // number
+```
+
+## Mapped Types con Genericos
+
+```typescript
+// Hacer todas las propiedades opcionales
+type Partial<T> = {
+  [P in keyof T]?: T[P];
+};
+
+// Hacer todas las propiedades requeridas
+type Required<T> = {
+  [P in keyof T]-?: T[P];
+};
+
+// Hacer todas las propiedades readonly
+type Readonly<T> = {
+  readonly [P in keyof T]: T[P];
+};
+
+interface Config {
+  host: string;
+  port: number;
+  debug: boolean;
+}
+
+type PartialConfig = Partial<Config>;
+// { host?: string; port?: number; debug?: boolean }
+
+type ReadonlyConfig = Readonly<Config>;
+// { readonly host: string; readonly port: number; readonly debug: boolean }
+```
+
+## Patron Builder con Genericos
+
+```typescript
+class QueryBuilder<T extends Record<string, unknown>> {
+  private filters: Partial<T> = {};
+  private _limit = 10;
+  private _offset = 0;
+
+  where<K extends keyof T>(key: K, value: T[K]): this {
+    this.filters[key] = value;
+    return this;
+  }
+
+  limit(n: number): this {
+    this._limit = n;
+    return this;
+  }
+
+  offset(n: number): this {
+    this._offset = n;
+    return this;
+  }
+
+  build(): { filters: Partial<T>; limit: number; offset: number } {
+    return { filters: this.filters, limit: this._limit, offset: this._offset };
+  }
+}
+
+// Uso type-safe
+interface UserFilter {
+  name: string;
+  email: string;
+  age: number;
+}
+
+const query = new QueryBuilder<UserFilter>()
+  .where("name", "John")
+  .where("age", 30)
+  .limit(20)
+  .build();
+```
+
+## Diagrama de Decision
+
+```mermaid
+flowchart TD
+    A[Necesitas reutilizar logica] --> B{Con cuantos tipos funciona?}
+    B -->|1| C[Usa tipo concreto]
+    B -->|N| D[Usa generics]
+    D --> E{Necesita restricciones?}
+    E -->|Si| F[Usa extends]
+    E -->|No| G[Generico simple]
+    F --> H{Necesita tipo condicional?}
+    H -->|Si| I[Usa tipos condicionales]
+    H -->|No| J[Generico restringido]
+```

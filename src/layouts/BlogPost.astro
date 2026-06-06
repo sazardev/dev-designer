@@ -1,17 +1,26 @@
 ---
 import { Image } from "astro:assets";
-import type { CollectionEntry } from "astro:content";
+import { getCollection, type CollectionEntry } from "astro:content";
 import BaseHead from "../components/BaseHead.astro";
 import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
+import ReadingProgress from "../components/ReadingProgress.astro";
 import FormattedDate from "../components/FormattedDate.astro";
 import CategoryBadge from "../components/CategoryBadge.astro";
 import DifficultyBadge from "../components/DifficultyBadge.astro";
 import TagList from "../components/TagList.astro";
+import TableOfContents from "../components/TableOfContents.astro";
+import AuthorCard from "../components/AuthorCard.astro";
+import RelatedPosts from "../components/RelatedPosts.astro";
 import { useTranslations } from "../i18n/ui";
 import type { Locale } from "../i18n/ui";
 
-type Props = CollectionEntry<"blog">["data"] & { locale: Locale };
+type Props = CollectionEntry<"blog">["data"] & {
+  locale: Locale;
+  readingTime?: string;
+  headings?: { depth: number; slug: string; text: string }[];
+  slug?: string;
+};
 
 const {
   title,
@@ -24,8 +33,34 @@ const {
   category,
   difficulty,
   locale,
+  readingTime,
+  headings = [],
+  slug,
 } = Astro.props;
 const t = useTranslations(locale);
+
+// Get related posts
+let relatedPostsData: CollectionEntry<"blog">[] = [];
+if (slug) {
+  const allPosts = await getCollection("blog");
+  relatedPostsData = allPosts
+    .filter(
+      (p) => p.data.locale === locale && !p.data.draft && p.id.replace(`${locale}/`, "") !== slug,
+    )
+    .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+    .slice(0, 3);
+}
+
+const relatedMapped = relatedPostsData.map((p) => ({
+  slug: p.id.replace(`${locale}/`, ""),
+  title: p.data.title,
+  description: p.data.description,
+  pubDate: p.data.pubDate,
+  category: p.data.category,
+  difficulty: p.data.difficulty,
+  heroImage: p.data.heroImage,
+  author: p.data.author,
+}));
 ---
 
 <html lang={locale}>
@@ -34,12 +69,13 @@ const t = useTranslations(locale);
   </head>
 
   <body>
+    <ReadingProgress />
     <Header locale={locale} />
     <main>
       <article>
         {
           heroImage && (
-            <div class="hero-image">
+            <div class="hero-image" transition:name={`hero-${slug}`}>
               <Image alt="" height={510} src={heroImage} width={1020} />
             </div>
           )
@@ -49,8 +85,9 @@ const t = useTranslations(locale);
             <div class="meta-bar">
               <CategoryBadge category={category} locale={locale} />
               {difficulty && <DifficultyBadge difficulty={difficulty} locale={locale} />}
+              {readingTime && <span class="reading-time">{readingTime}</span>}
             </div>
-            <h1>{title}</h1>
+            <h1 transition:name={`title-${slug}`}>{title}</h1>
             <div class="date-line">
               <FormattedDate date={pubDate} />
               {
@@ -74,6 +111,8 @@ const t = useTranslations(locale);
             </div>
           </div>
 
+          <TableOfContents headings={headings} />
+
           <slot />
 
           {
@@ -83,6 +122,10 @@ const t = useTranslations(locale);
               </div>
             )
           }
+
+          <AuthorCard author={author} locale={locale} />
+
+          <RelatedPosts locale={locale} posts={relatedMapped} />
         </div>
       </article>
     </main>
@@ -114,6 +157,14 @@ const t = useTranslations(locale);
     align-items: center;
     gap: var(--space-sm);
     margin-bottom: var(--space-md);
+    flex-wrap: wrap;
+  }
+  .reading-time {
+    font-family: var(--font-mono);
+    font-size: var(--label);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    color: var(--text-disabled);
   }
   .title h1 {
     margin: 0 0 var(--space-md) 0;

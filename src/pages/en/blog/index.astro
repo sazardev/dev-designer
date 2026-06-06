@@ -5,6 +5,7 @@ import BaseHead from "../../../components/BaseHead.astro";
 import Header from "../../../components/Header.astro";
 import Footer from "../../../components/Footer.astro";
 import FilterBar from "../../../components/FilterBar.astro";
+import ViewToggle from "../../../components/ViewToggle.astro";
 import CategoryBadge from "../../../components/CategoryBadge.astro";
 import DifficultyBadge from "../../../components/DifficultyBadge.astro";
 import SearchDialog from "../../../components/SearchDialog.astro";
@@ -12,6 +13,7 @@ import FormattedDate from "../../../components/FormattedDate.astro";
 import { SITE_TITLE } from "../../../consts";
 import { useTranslations } from "../../../i18n/ui";
 import type { Locale } from "../../../i18n/ui";
+import { getReadingTime } from "../../../utils/reading-time";
 
 const locale = "en" as Locale;
 const t = useTranslations(locale);
@@ -20,6 +22,8 @@ const posts = (await getCollection("blog"))
   .filter((post) => post.data.locale === locale && !post.data.draft)
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 
+const featuredPost = posts.find((p) => p.data.featured);
+const regularPosts = posts.filter((p) => p !== featuredPost);
 const allCategories = [...new Set(posts.map((p) => p.data.category))];
 ---
 
@@ -34,15 +38,56 @@ const allCategories = [...new Set(posts.map((p) => p.data.category))];
       <div class="blog-header">
         <h1>{t["nav.blog"]}</h1>
         <p class="blog-description">{t["site.description"]}</p>
+        <div class="blog-stats">
+          <span class="stat">{posts.length} articles</span>
+          <span class="stat-separator">·</span>
+          <span class="stat">{allCategories.length} categories</span>
+        </div>
       </div>
 
       <SearchDialog locale={locale} />
 
-      <FilterBar categories={allCategories} locale={locale} />
+      {
+        featuredPost && (
+          <a
+            class="featured-hero"
+            href={`/${locale}/blog/${featuredPost.id.replace(`${locale}/`, "")}/`}
+          >
+            {featuredPost.data.heroImage && (
+              <div class="featured-image">
+                <Image alt="" height={400} src={featuredPost.data.heroImage} width={800} />
+              </div>
+            )}
+            <div class="featured-content">
+              <div class="featured-meta">
+                <CategoryBadge category={featuredPost.data.category} locale={locale} />
+                {featuredPost.data.difficulty && (
+                  <DifficultyBadge difficulty={featuredPost.data.difficulty} locale={locale} />
+                )}
+                <span class="featured-badge">FEATURED</span>
+              </div>
+              <h2 class="featured-title">{featuredPost.data.title}</h2>
+              <p class="featured-description">{featuredPost.data.description}</p>
+              <div class="featured-footer">
+                <span class="featured-author">{featuredPost.data.author}</span>
+                <span class="featured-separator">·</span>
+                <FormattedDate date={featuredPost.data.pubDate} />
+                <span class="featured-separator">·</span>
+                <span class="featured-reading">{getReadingTime(featuredPost.body || "")}</span>
+              </div>
+            </div>
+          </a>
+        )
+      }
 
-      <div class="posts-grid" id="posts-grid">
+      <div class="toolbar">
+        <FilterBar categories={allCategories} locale={locale} />
+        <ViewToggle />
+      </div>
+
+      <div class="posts-grid" data-view="grid" id="posts-grid">
         {
-          posts.map((post) => (
+          regularPosts.map((post) => (
             <a
               class="post-card"
               data-category={post.data.category}
@@ -52,24 +97,28 @@ const allCategories = [...new Set(posts.map((p) => p.data.category))];
               data-title={post.data.title}
               href={`/${locale}/blog/${post.id.replace(`${locale}/`, "")}/`}
             >
-              {post.data.heroImage && (
-                <div class="post-image">
-                  <Image alt="" height={360} src={post.data.heroImage} width={720} />
-                </div>
-              )}
-              <div class="post-content">
-                <div class="post-meta">
-                  <CategoryBadge category={post.data.category} locale={locale} />
-                  {post.data.difficulty && (
-                    <DifficultyBadge difficulty={post.data.difficulty} locale={locale} />
-                  )}
-                  {post.data.featured && <span class="featured-badge">{t["blog.featured"]}</span>}
-                </div>
-                <h2>{post.data.title}</h2>
-                <p class="post-description">{post.data.description}</p>
-                <div class="post-footer">
-                  <span class="post-author">{post.data.author}</span>
-                  <FormattedDate date={post.data.pubDate} />
+              <div class="post-card-inner">
+                {post.data.heroImage && (
+                  <div class="post-image">
+                    <Image alt="" height={360} src={post.data.heroImage} width={720} />
+                  </div>
+                )}
+                <div class="post-content">
+                  <div class="post-meta">
+                    <CategoryBadge category={post.data.category} locale={locale} />
+                    {post.data.difficulty && (
+                      <DifficultyBadge difficulty={post.data.difficulty} locale={locale} />
+                    )}
+                  </div>
+                  <h2>{post.data.title}</h2>
+                  <p class="post-description">{post.data.description}</p>
+                  <div class="post-footer">
+                    <span class="post-author">{post.data.author}</span>
+                    <div class="post-footer-right">
+                      <span class="post-reading">{getReadingTime(post.body || "")}</span>
+                      <FormattedDate date={post.data.pubDate} />
+                    </div>
+                  </div>
                 </div>
               </div>
             </a>
@@ -125,8 +174,19 @@ const allCategories = [...new Set(posts.map((p) => p.data.category))];
         }
       }
 
+      // View toggle
       document.addEventListener("click", (e) => {
         const target = e.target as HTMLElement;
+
+        if (target.closest("[data-view]")) {
+          const btn = target.closest("[data-view]") as HTMLElement;
+          const view = btn.getAttribute("data-view");
+          if (view && grid) {
+            grid.setAttribute("data-view", view);
+            document.querySelectorAll("[data-view]").forEach((b) => b.classList.remove("active"));
+            btn.classList.add("active");
+          }
+        }
 
         if (target.matches('[data-filter="category"]')) {
           document
@@ -159,7 +219,7 @@ const allCategories = [...new Set(posts.map((p) => p.data.category))];
 
 <style>
   .blog-header {
-    margin-bottom: var(--space-2xl);
+    margin-bottom: var(--space-3xl);
   }
   .blog-header h1 {
     margin: 0 0 var(--space-sm) 0;
@@ -167,15 +227,152 @@ const allCategories = [...new Set(posts.map((p) => p.data.category))];
     letter-spacing: var(--ls-display-md);
   }
   .blog-description {
-    margin: 0;
+    margin: 0 0 var(--space-sm) 0;
     color: var(--text-secondary);
     font-size: var(--body);
   }
-  .posts-grid {
+  .blog-stats {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-family: var(--font-mono);
+    font-size: var(--caption);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-caption);
+    color: var(--text-disabled);
+  }
+  .stat-separator {
+    opacity: 0.4;
+  }
+
+  /* Featured Hero */
+  .featured-hero {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2xl);
+    margin-bottom: var(--space-3xl);
+    padding: var(--space-xl);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    text-decoration: none;
+    color: inherit;
+    background: var(--surface);
+    transition: border-color var(--duration-fast) var(--ease-out);
+  }
+  .featured-hero:hover {
+    border-color: var(--border-visible);
+  }
+  .featured-image :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+    display: block;
+    min-height: 240px;
+  }
+  .featured-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--space-md);
+  }
+  .featured-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+  }
+  .featured-badge {
+    padding: var(--space-2xs) var(--space-sm);
+    font-family: var(--font-mono);
+    font-size: var(--label);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+  }
+  .featured-title {
+    margin: 0;
+    font-size: var(--heading);
+    letter-spacing: var(--ls-heading);
+    color: var(--text-display);
+    line-height: var(--lh-heading);
+  }
+  .featured-description {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: var(--body-sm);
+    line-height: var(--lh-body);
+  }
+  .featured-footer {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-family: var(--font-mono);
+    font-size: var(--caption);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-caption);
+    color: var(--text-secondary);
+  }
+  .featured-author {
+    color: var(--text-primary);
+  }
+  .featured-separator {
+    opacity: 0.4;
+  }
+  .featured-reading {
+    color: var(--text-disabled);
+  }
+
+  /* Toolbar */
+  .toolbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-md);
+    margin-bottom: var(--space-2xl);
+  }
+
+  /* Grid View */
+  .posts-grid[data-view="grid"] {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: var(--space-xl);
+  }
+  .posts-grid[data-view="grid"] .post-card-inner {
+    display: flex;
+    flex-direction: column;
+  }
+  .posts-grid[data-view="grid"] .post-image :global(img) {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* List View */
+  .posts-grid[data-view="list"] {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+  .posts-grid[data-view="list"] .post-card-inner {
+    display: grid;
+    grid-template-columns: 280px 1fr;
     gap: var(--space-lg);
   }
+  .posts-grid[data-view="list"] .post-image :global(img) {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    display: block;
+    border-radius: 8px 0 0 8px;
+  }
+  .posts-grid[data-view="list"] .post-description {
+    -webkit-line-clamp: 3;
+  }
+
   .post-card {
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -188,14 +385,8 @@ const allCategories = [...new Set(posts.map((p) => p.data.category))];
   .post-card:hover {
     border-color: var(--border-visible);
   }
-  .post-image :global(img) {
-    width: 100%;
-    height: 180px;
-    object-fit: cover;
-    display: block;
-  }
   .post-content {
-    padding: var(--space-md);
+    padding: var(--space-lg);
   }
   .post-meta {
     display: flex;
@@ -236,15 +427,18 @@ const allCategories = [...new Set(posts.map((p) => p.data.category))];
     letter-spacing: var(--ls-caption);
     color: var(--text-secondary);
   }
-  .featured-badge {
-    padding: var(--space-2xs) var(--space-sm);
+  .post-footer-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
     font-family: var(--font-mono);
-    font-size: var(--label);
+    font-size: var(--caption);
     text-transform: uppercase;
-    letter-spacing: var(--ls-label);
-    color: var(--accent);
-    border: 1px solid var(--accent);
-    border-radius: 4px;
+    letter-spacing: var(--ls-caption);
+    color: var(--text-secondary);
+  }
+  .post-reading {
+    color: var(--text-disabled);
   }
   .no-results {
     text-align: center;
@@ -256,8 +450,17 @@ const allCategories = [...new Set(posts.map((p) => p.data.category))];
     letter-spacing: var(--ls-caption);
   }
   @media (max-width: 720px) {
-    .posts-grid {
+    .posts-grid[data-view="grid"] {
       grid-template-columns: 1fr;
+    }
+    .posts-grid[data-view="list"] .post-card-inner {
+      grid-template-columns: 1fr;
+    }
+    .featured-hero {
+      grid-template-columns: 1fr;
+    }
+    .toolbar {
+      flex-direction: column;
     }
   }
 </style>
