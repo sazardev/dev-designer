@@ -1,0 +1,30 @@
+---
+import { CATEGORIES } from "../consts";
+
+interface Props {
+  category: string;
+  locale: string;
+}
+
+const { category, locale } = Astro.props;
+const categories = CATEGORIES[category as keyof typeof CATEGORIES];
+const label = categories?.[locale as "es" | "en"] || category;
+---
+
+<span class="category-badge">
+  {label}
+</span>
+
+<style>
+  .category-badge {
+    display: inline-block;
+    padding: var(--space-2xs) var(--space-sm);
+    font-family: var(--font-mono);
+    font-size: var(--label);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-visible);
+    border-radius: 4px;
+  }
+</style>

@@ -1,0 +1,32 @@
+---
+import { DIFFICULTY } from "../consts";
+
+interface Props {
+  difficulty: string;
+  locale: string;
+}
+
+const { difficulty, locale } = Astro.props;
+const diff = DIFFICULTY[difficulty as keyof typeof DIFFICULTY];
+const label = diff?.[locale as "es" | "en"] || difficulty;
+const color = diff?.color || "var(--text-secondary)";
+---
+
+<span
+  class:list={["difficulty-badge", `difficulty-${difficulty}`]}
+  style={`--badge-color: ${color}`}
+>
+  {label}
+</span>
+
+<style>
+  .difficulty-badge {
+    display: inline-block;
+    padding: var(--space-2xs) var(--space-sm);
+    font-family: var(--font-mono);
+    font-size: var(--label);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    color: var(--badge-color);
+  }
+</style>

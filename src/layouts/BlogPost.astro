@@ -1,86 +1,150 @@
 ---
-import { Image } from 'astro:assets';
-import type { CollectionEntry } from 'astro:content';
-import BaseHead from '../components/BaseHead.astro';
-import Footer from '../components/Footer.astro';
-import FormattedDate from '../components/FormattedDate.astro';
-import Header from '../components/Header.astro';
+import { Image } from "astro:assets";
+import type { CollectionEntry } from "astro:content";
+import BaseHead from "../components/BaseHead.astro";
+import Footer from "../components/Footer.astro";
+import Header from "../components/Header.astro";
+import FormattedDate from "../components/FormattedDate.astro";
+import CategoryBadge from "../components/CategoryBadge.astro";
+import DifficultyBadge from "../components/DifficultyBadge.astro";
+import TagList from "../components/TagList.astro";
+import { useTranslations } from "../i18n/ui";
+import type { Locale } from "../i18n/ui";
 
-type Props = CollectionEntry<'blog'>['data'];
+type Props = CollectionEntry<"blog">["data"] & { locale: Locale };
 
-const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
+const {
+  title,
+  description,
+  pubDate,
+  updatedDate,
+  heroImage,
+  author,
+  tags,
+  category,
+  difficulty,
+  locale,
+} = Astro.props;
+const t = useTranslations(locale);
 ---
 
-<html lang="en">
-	<head>
-		<BaseHead title={title} description={description} />
-		<style>
-			main {
-				width: calc(100% - 2em);
-				max-width: 100%;
-				margin: 0;
-			}
-			.hero-image {
-				width: 100%;
-			}
-			.hero-image img {
-				display: block;
-				margin: 0 auto;
-				border-radius: 12px;
-				box-shadow: var(--box-shadow);
-			}
-			.prose {
-				width: 720px;
-				max-width: calc(100% - 2em);
-				margin: auto;
-				padding: 1em;
-				color: rgb(var(--gray-dark));
-			}
-			.title {
-				margin-bottom: 1em;
-				padding: 1em 0;
-				text-align: center;
-				line-height: 1;
-			}
-			.title h1 {
-				margin: 0 0 0.5em 0;
-			}
-			.date {
-				margin-bottom: 0.5em;
-				color: rgb(var(--gray));
-			}
-			.last-updated-on {
-				font-style: italic;
-			}
-		</style>
-	</head>
+<html lang={locale}>
+  <head>
+    <BaseHead description={description} title={title} />
+  </head>
 
-	<body>
-		<Header />
-		<main>
-			<article>
-				<div class="hero-image">
-					{heroImage && <Image width={1020} height={510} src={heroImage} alt="" />}
-				</div>
-				<div class="prose">
-					<div class="title">
-						<div class="date">
-							<FormattedDate date={pubDate} />
-							{
-								updatedDate && (
-									<div class="last-updated-on">
-										Last updated on <FormattedDate date={updatedDate} />
-									</div>
-								)
-							}
-						</div>
-						<h1>{title}</h1>
-						<hr />
-					</div>
-					<slot />
-				</div>
-			</article>
-		</main>
-		<Footer />
-	</body>
+  <body>
+    <Header locale={locale} />
+    <main>
+      <article>
+        {
+          heroImage && (
+            <div class="hero-image">
+              <Image alt="" height={510} src={heroImage} width={1020} />
+            </div>
+          )
+        }
+        <div class="prose">
+          <div class="title">
+            <div class="meta-bar">
+              <CategoryBadge category={category} locale={locale} />
+              {difficulty && <DifficultyBadge difficulty={difficulty} locale={locale} />}
+            </div>
+            <h1>{title}</h1>
+            <div class="date-line">
+              <FormattedDate date={pubDate} />
+              {
+                author && (
+                  <>
+                    <span class="date-separator">·</span>
+                    <span class="author">{author}</span>
+                  </>
+                )
+              }
+              {
+                updatedDate && (
+                  <>
+                    <span class="date-separator">·</span>
+                    <span class="updated">
+                      {t["blog.updated"]} <FormattedDate date={updatedDate} />
+                    </span>
+                  </>
+                )
+              }
+            </div>
+          </div>
+
+          <slot />
+
+          {
+            tags.length > 0 && (
+              <div class="tags-section">
+                <TagList locale={locale} tags={tags} />
+              </div>
+            )
+          }
+        </div>
+      </article>
+    </main>
+    <Footer locale={locale} />
+  </body>
 </html>
+
+<style>
+  .hero-image {
+    margin-bottom: var(--space-xl);
+  }
+  .hero-image :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .prose {
+    width: 720px;
+    max-width: calc(100% - var(--space-xl));
+    margin: 0 auto;
+  }
+  .title {
+    margin-bottom: var(--space-2xl);
+  }
+  .meta-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+  }
+  .title h1 {
+    margin: 0 0 var(--space-md) 0;
+    font-size: var(--display-md);
+    letter-spacing: var(--ls-display-md);
+    line-height: var(--lh-display);
+  }
+  .date-line {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-family: var(--font-mono);
+    font-size: var(--caption);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-caption);
+    color: var(--text-secondary);
+  }
+  .date-separator {
+    opacity: 0.4;
+  }
+  .author {
+    color: var(--text-primary);
+  }
+  .updated {
+    color: var(--text-disabled);
+    font-style: italic;
+    text-transform: none;
+  }
+  .tags-section {
+    margin-top: var(--space-2xl);
+    padding-top: var(--space-lg);
+    border-top: 1px solid var(--border);
+  }
+</style>

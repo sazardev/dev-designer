@@ -1,0 +1,115 @@
+---
+title: "Clean Architecture in Real Projects"
+description: "Separation of concerns and dependencies with clean architecture"
+pubDate: "2024-07-01"
+heroImage: "../../../assets/blog-placeholder-2.jpg"
+locale: "en"
+author: "dev-design"
+tags: ["architecture", "clean-architecture", "solid", "typescript"]
+category: "architecture"
+difficulty: "advanced"
+featured: false
+relatedPosts: ["singleton-pattern"]
+---
+
+## What is Clean Architecture?
+
+Clean Architecture, proposed by Robert C. Martin, is an architectural style that separates concerns into **concentric circles**, where dependencies point inward.
+
+## The Rings Diagram
+
+```mermaid
+graph TB
+    subgraph "Frameworks & Drivers"
+        UI[UI / Controllers]
+        DB[Database]
+        EXT[External APIs]
+    end
+    subgraph "Interface Adapters"
+        GW[Gateways]
+        CP[Controllers]
+        PR[Presenters]
+    end
+    subgraph "Application Business Rules"
+        UC[Use Cases]
+    end
+    subgraph "Enterprise Business Rules"
+        ENT[Entities]
+    end
+    UI --> CP
+    DB --> GW
+    EXT --> GW
+    CP --> UC
+    GW --> UC
+    UC --> ENT
+```
+
+## Project Layers
+
+```
+src/
+├── domain/           # Entities and business rules
+│   ├── entities/
+│   └── value-objects/
+├── application/      # Use cases
+│   ├── use-cases/
+│   └── dtos/
+├── infrastructure/   # External implementations
+│   ├── database/
+│   ├── api/
+│   └── filesystem/
+└── presentation/     # UI and controllers
+    ├── components/
+    └── pages/
+```
+
+## Example: Use Case
+
+```typescript
+// domain/entities/Order.ts
+export class Order {
+  constructor(
+    public readonly id: string,
+    public readonly items: OrderItem[],
+    public readonly total: number,
+  ) {}
+}
+
+// application/use-cases/CreateOrder.ts
+export class CreateOrder {
+  constructor(private orderRepo: OrderRepository) {}
+
+  async execute(items: OrderItem[]): Promise<Order> {
+    const total = items.reduce((sum, item) => sum + item.price, 0);
+    const order = new Order(generateId(), items, total);
+    await this.orderRepo.save(order);
+    return order;
+  }
+}
+```
+
+## Data Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant P as Presentation
+    participant A as Application
+    participant D as Domain
+    participant I as Infrastructure
+    U->>P: Click Button
+    P->>A: CreateOrder(items)
+    A->>D: new Order(...)
+    D-->>A: order
+    A->>I: orderRepo.save(order)
+    I-->>A: saved
+    A-->>P: order
+    P-->>U: Show confirmation
+```
+
+## Benefits
+
+- **Testable**: Each layer can be tested in isolation
+- **Maintainable**: UI changes don't affect the domain
+- **Scalable**: Easy to extend with new features
+- **Independent**: Doesn't depend on specific frameworks

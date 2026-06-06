@@ -1,0 +1,5 @@
+{
+  "entry": ["src/**/*.{astro,ts,tsx}"],
+  "project": ["src/**/*.{astro,ts,tsx}"],
+  "ignoreDependencies": ["sharp", "astro-pagefind", "astro-eslint-parser", "eslint-plugin-jsx-a11y"]
+}

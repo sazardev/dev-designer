@@ -1,0 +1,136 @@
+---
+import { useTranslations } from "../i18n/ui";
+import type { Locale } from "../i18n/ui";
+import PagefindConfig from "astro-pagefind/components/PagefindConfig.astro";
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const t = useTranslations(locale);
+---
+
+<PagefindConfig instance="blog-search" lang={locale} preload={true} />
+
+<div class="search-overlay is-hidden" id="search-overlay">
+  <div class="search-dialog">
+    <div class="search-header">
+      <span class="search-title">{t["blog.search"]}</span>
+      <button aria-label="Close search" class="close-btn" id="close-search">
+        <svg
+          fill="none"
+          height="16"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="1.5"
+          viewBox="0 0 24 24"
+          width="16"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <line x1="18" x2="6" y1="6" y2="18"></line>
+          <line x1="6" x2="18" y1="6" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    <pagefind-searchbox instance="blog-search" placeholder={t["blog.search"]}></pagefind-searchbox>
+    <pagefind-results instance="blog-search"></pagefind-results>
+  </div>
+</div>
+
+<script>
+  function openSearch() {
+    const overlay = document.getElementById("search-overlay");
+    if (overlay) {
+      overlay.classList.remove("is-hidden");
+      document.body.style.overflow = "hidden";
+      const input = overlay.querySelector("input") as HTMLInputElement;
+      if (input) input.focus();
+    }
+  }
+
+  function closeSearch() {
+    const overlay = document.getElementById("search-overlay");
+    if (overlay) {
+      overlay.classList.add("is-hidden");
+      document.body.style.overflow = "";
+    }
+  }
+
+  (window as any).openSearch = openSearch;
+
+  document.getElementById("close-search")?.addEventListener("click", closeSearch);
+  document.getElementById("search-overlay")?.addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) closeSearch();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeSearch();
+    if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+      e.preventDefault();
+      openSearch();
+    }
+  });
+</script>
+
+<style>
+  .search-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: start;
+    justify-content: center;
+    padding-top: 15vh;
+    background: rgba(0, 0, 0, 0.7);
+  }
+  .search-overlay.is-hidden {
+    display: none;
+  }
+  .search-dialog {
+    width: 90%;
+    max-width: 600px;
+    max-height: 60vh;
+    background: var(--surface);
+    border: 1px solid var(--border-visible);
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .search-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md);
+    border-bottom: 1px solid var(--border);
+  }
+  .search-title {
+    font-family: var(--font-mono);
+    font-size: var(--label);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    color: var(--text-secondary);
+  }
+  .close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all var(--duration-fast) var(--ease-out);
+  }
+  .close-btn:hover {
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+  }
+  :global(.pagefind-ui) {
+    padding: var(--space-md);
+  }
+</style>

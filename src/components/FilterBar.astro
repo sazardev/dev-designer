@@ -1,0 +1,121 @@
+---
+import { useTranslations } from "../i18n/ui";
+import type { Locale } from "../i18n/ui";
+
+interface Props {
+  locale: Locale;
+  categories: string[];
+}
+
+const { locale, categories } = Astro.props;
+const t = useTranslations(locale);
+---
+
+<div class="filter-bar">
+  <div class="filter-group">
+    <label class="filter-label">{t["blog.filter.category"]}</label>
+    <div class="filter-options">
+      <button class="filter-btn active" data-filter="category" data-value="all">
+        {t["blog.all"]}
+      </button>
+      {
+        categories.map((cat) => (
+          <button class="filter-btn" data-filter="category" data-value={cat}>
+            {t.categories[cat as keyof typeof t.categories] || cat}
+          </button>
+        ))
+      }
+    </div>
+  </div>
+
+  <div class="filter-group">
+    <label class="filter-label">{t["blog.filter.difficulty"]}</label>
+    <div class="filter-options">
+      <button class="filter-btn active" data-filter="difficulty" data-value="all">
+        {t["blog.all"]}
+      </button>
+      <button class="filter-btn" data-filter="difficulty" data-value="beginner">
+        {t.difficulty.beginner}
+      </button>
+      <button class="filter-btn" data-filter="difficulty" data-value="intermediate">
+        {t.difficulty.intermediate}
+      </button>
+      <button class="filter-btn" data-filter="difficulty" data-value="advanced">
+        {t.difficulty.advanced}
+      </button>
+    </div>
+  </div>
+
+  <div class="filter-group">
+    <label class="filter-label">{t["blog.sortNewest"]}</label>
+    <div class="filter-options">
+      <button class="sort-btn active" data-sort="newest">
+        {t["blog.sortNewest"]}
+      </button>
+      <button class="sort-btn" data-sort="oldest">
+        {t["blog.sortOldest"]}
+      </button>
+      <button class="sort-btn" data-sort="az">
+        {t["blog.sortAZ"]}
+      </button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-lg);
+    margin-bottom: var(--space-xl);
+    padding: var(--space-md);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+  .filter-label {
+    font-family: var(--font-mono);
+    font-size: var(--label);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    color: var(--text-secondary);
+  }
+  .filter-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+  .filter-btn,
+  .sort-btn {
+    padding: var(--space-xs) var(--space-md);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    font-family: var(--font-mono);
+    font-size: var(--caption);
+    color: var(--text-secondary);
+    transition: all var(--duration-fast) var(--ease-out);
+  }
+  .filter-btn:hover,
+  .sort-btn:hover {
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+  }
+  .filter-btn.active,
+  .sort-btn.active {
+    background: var(--text-display);
+    color: var(--black);
+    border-color: var(--text-display);
+  }
+  @media (max-width: 720px) {
+    .filter-bar {
+      gap: var(--space-md);
+      padding: var(--space-sm);
+    }
+  }
+</style>

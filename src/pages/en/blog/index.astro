@@ -1,0 +1,268 @@
+---
+import { getCollection } from "astro:content";
+import { Image } from "astro:assets";
+import BaseHead from "../../../components/BaseHead.astro";
+import Header from "../../../components/Header.astro";
+import Footer from "../../../components/Footer.astro";
+import FilterBar from "../../../components/FilterBar.astro";
+import CategoryBadge from "../../../components/CategoryBadge.astro";
+import DifficultyBadge from "../../../components/DifficultyBadge.astro";
+import SearchDialog from "../../../components/SearchDialog.astro";
+import FormattedDate from "../../../components/FormattedDate.astro";
+import { SITE_TITLE } from "../../../consts";
+import { useTranslations } from "../../../i18n/ui";
+import type { Locale } from "../../../i18n/ui";
+
+export async function getStaticPaths() {
+  return [{ params: { lang: "es" } }, { params: { lang: "en" } }];
+}
+
+const { lang } = Astro.params;
+const locale = lang as Locale;
+const t = useTranslations(locale);
+
+const posts = (await getCollection("blog"))
+  .filter((post) => post.data.locale === locale && !post.data.draft)
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const allCategories = [...new Set(posts.map((p) => p.data.category))];
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <BaseHead description={t["site.description"]} title={`Blog | ${SITE_TITLE}`} />
+  </head>
+  <body>
+    <Header locale={locale} />
+    <main>
+      <div class="blog-header">
+        <h1>{t["nav.blog"]}</h1>
+        <p class="blog-description">{t["site.description"]}</p>
+      </div>
+
+      <SearchDialog locale={locale} />
+
+      <FilterBar categories={allCategories} locale={locale} />
+
+      <div class="posts-grid" id="posts-grid">
+        {
+          posts.map((post) => (
+            <a
+              class="post-card"
+              data-category={post.data.category}
+              data-date={post.data.pubDate.toISOString()}
+              data-difficulty={post.data.difficulty || ""}
+              data-tags={post.data.tags.join(",")}
+              data-title={post.data.title}
+              href={`/${locale}/blog/${post.id}/`}
+            >
+              {post.data.heroImage && (
+                <div class="post-image">
+                  <Image alt="" height={360} src={post.data.heroImage} width={720} />
+                </div>
+              )}
+              <div class="post-content">
+                <div class="post-meta">
+                  <CategoryBadge category={post.data.category} locale={locale} />
+                  {post.data.difficulty && (
+                    <DifficultyBadge difficulty={post.data.difficulty} locale={locale} />
+                  )}
+                  {post.data.featured && <span class="featured-badge">{t["blog.featured"]}</span>}
+                </div>
+                <h2>{post.data.title}</h2>
+                <p class="post-description">{post.data.description}</p>
+                <div class="post-footer">
+                  <span class="post-author">{post.data.author}</span>
+                  <FormattedDate date={post.data.pubDate} />
+                </div>
+              </div>
+            </a>
+          ))
+        }
+      </div>
+
+      <div class="no-results" hidden id="no-results">
+        <p>{t["blog.noResults"]}</p>
+      </div>
+    </main>
+    <Footer locale={locale} />
+
+    <script>
+      const grid = document.getElementById("posts-grid");
+      const noResults = document.getElementById("no-results");
+      const cards = grid ? Array.from(grid.querySelectorAll(".post-card")) : [];
+
+      let activeCategory = "all";
+      let activeDifficulty = "all";
+      let activeSort = "newest";
+
+      function filterAndSort() {
+        const visible = cards.filter((card) => {
+          const cat = card.getAttribute("data-category");
+          const diff = card.getAttribute("data-difficulty");
+          const matchCat = activeCategory === "all" || cat === activeCategory;
+          const matchDiff = activeDifficulty === "all" || diff === activeDifficulty;
+          return matchCat && matchDiff;
+        });
+
+        visible.sort((a, b) => {
+          if (activeSort === "newest") {
+            return (b.getAttribute("data-date") || "").localeCompare(
+              a.getAttribute("data-date") || "",
+            );
+          }
+          if (activeSort === "oldest") {
+            return (a.getAttribute("data-date") || "").localeCompare(
+              b.getAttribute("data-date") || "",
+            );
+          }
+          return (a.getAttribute("data-title") || "").localeCompare(
+            b.getAttribute("data-title") || "",
+          );
+        });
+
+        cards.forEach((card) => ((card as HTMLElement).style.display = "none"));
+        visible.forEach((card) => ((card as HTMLElement).style.display = ""));
+
+        if (noResults) {
+          noResults.hidden = visible.length > 0;
+        }
+      }
+
+      document.addEventListener("click", (e) => {
+        const target = e.target as HTMLElement;
+
+        if (target.matches('[data-filter="category"]')) {
+          document
+            .querySelectorAll('[data-filter="category"]')
+            .forEach((btn) => btn.classList.remove("active"));
+          target.classList.add("active");
+          activeCategory = target.getAttribute("data-value") || "all";
+          filterAndSort();
+        }
+
+        if (target.matches('[data-filter="difficulty"]')) {
+          document
+            .querySelectorAll('[data-filter="difficulty"]')
+            .forEach((btn) => btn.classList.remove("active"));
+          target.classList.add("active");
+          activeDifficulty = target.getAttribute("data-value") || "all";
+          filterAndSort();
+        }
+
+        if (target.matches("[data-sort]")) {
+          document.querySelectorAll("[data-sort]").forEach((btn) => btn.classList.remove("active"));
+          target.classList.add("active");
+          activeSort = target.getAttribute("data-sort") || "newest";
+          filterAndSort();
+        }
+      });
+    </script>
+  </body>
+</html>
+
+<style>
+  .blog-header {
+    margin-bottom: var(--space-2xl);
+  }
+  .blog-header h1 {
+    margin: 0 0 var(--space-sm) 0;
+    font-size: var(--display-md);
+    letter-spacing: var(--ls-display-md);
+  }
+  .blog-description {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: var(--body);
+  }
+  .posts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--space-lg);
+  }
+  .post-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    background: var(--surface);
+    transition: border-color var(--duration-fast) var(--ease-out);
+  }
+  .post-card:hover {
+    border-color: var(--border-visible);
+  }
+  .post-image :global(img) {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    display: block;
+  }
+  .post-content {
+    padding: var(--space-md);
+  }
+  .post-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
+    flex-wrap: wrap;
+  }
+  .post-card h2 {
+    margin: 0 0 var(--space-sm) 0;
+    font-size: var(--body);
+    font-weight: 500;
+    line-height: var(--lh-heading);
+    color: var(--text-display);
+  }
+  .post-description {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: var(--body-sm);
+    line-height: var(--lh-body);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .post-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: var(--space-md);
+    padding-top: var(--space-sm);
+    border-top: 1px solid var(--border);
+  }
+  .post-author {
+    font-family: var(--font-mono);
+    font-size: var(--caption);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-caption);
+    color: var(--text-secondary);
+  }
+  .featured-badge {
+    padding: var(--space-2xs) var(--space-sm);
+    font-family: var(--font-mono);
+    font-size: var(--label);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+  }
+  .no-results {
+    text-align: center;
+    padding: var(--space-3xl);
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: var(--body-sm);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-caption);
+  }
+  @media (max-width: 720px) {
+    .posts-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

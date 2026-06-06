@@ -1,0 +1,115 @@
+---
+title: "Clean Architecture en Proyectos Reales"
+description: "Separación de responsabilidades y dependencias con arquitectura limpia"
+pubDate: "2024-07-01"
+heroImage: "../../../assets/blog-placeholder-2.jpg"
+locale: "es"
+author: "dev-design"
+tags: ["architecture", "clean-architecture", "solid", "typescript"]
+category: "architecture"
+difficulty: "advanced"
+featured: false
+relatedPosts: ["singleton-pattern"]
+---
+
+## ¿Qué es Clean Architecture?
+
+Clean Architecture, propuesta por Robert C. Martin, es un estilo arquitectónico que separa concerns en **concentric circles**, donde las dependencias apuntan hacia adentro.
+
+## El Diagrama de los Anillos
+
+```mermaid
+graph TB
+    subgraph "Frameworks & Drivers"
+        UI[UI / Controllers]
+        DB[Database]
+        EXT[External APIs]
+    end
+    subgraph "Interface Adapters"
+        GW[Gateways]
+        CP[Controllers]
+        PR[Presenters]
+    end
+    subgraph "Application Business Rules"
+        UC[Use Cases]
+    end
+    subgraph "Enterprise Business Rules"
+        ENT[Entities]
+    end
+    UI --> CP
+    DB --> GW
+    EXT --> GW
+    CP --> UC
+    GW --> UC
+    UC --> ENT
+```
+
+## Capas del Proyecto
+
+```
+src/
+├── domain/           # Entidades y reglas de negocio
+│   ├── entities/
+│   └── value-objects/
+├── application/      # Casos de uso
+│   ├── use-cases/
+│   └── dtos/
+├── infrastructure/   # Implementaciones externas
+│   ├── database/
+│   ├── api/
+│   └── filesystem/
+└── presentation/     # UI y controladores
+    ├── components/
+    └── pages/
+```
+
+## Ejemplo: Use Case
+
+```typescript
+// domain/entities/Order.ts
+export class Order {
+  constructor(
+    public readonly id: string,
+    public readonly items: OrderItem[],
+    public readonly total: number,
+  ) {}
+}
+
+// application/use-cases/CreateOrder.ts
+export class CreateOrder {
+  constructor(private orderRepo: OrderRepository) {}
+
+  async execute(items: OrderItem[]): Promise<Order> {
+    const total = items.reduce((sum, item) => sum + item.price, 0);
+    const order = new Order(generateId(), items, total);
+    await this.orderRepo.save(order);
+    return order;
+  }
+}
+```
+
+## Flujo de Datos
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant P as Presentation
+    participant A as Application
+    participant D as Domain
+    participant I as Infrastructure
+    U->>P: Click Button
+    P->>A: CreateOrder(items)
+    A->>D: new Order(...)
+    D-->>A: order
+    A->>I: orderRepo.save(order)
+    I-->>A: saved
+    A-->>P: order
+    P-->>U: Show confirmation
+```
+
+## Beneficios
+
+- **Testeable**: Cada capa se puede testear de forma aislada
+- **Maintainable**: Los cambios en UI no afectan el dominio
+- **Scalable**: Fácil de extender con nuevas funcionalidades
+- **Independiente**: No depende de frameworks específicos

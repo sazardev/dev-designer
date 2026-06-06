@@ -1,0 +1,8 @@
+dist/
+node_modules/
+.astro/
+public/
+src/assets/fonts/
+*.min.js
+*.min.css
+package-lock.json

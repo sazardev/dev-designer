@@ -1,0 +1,35 @@
+---
+interface Props {
+  locale: string;
+}
+
+const { locale } = Astro.props;
+const otherLocale = locale === "es" ? "en" : "es";
+const switchLabel = locale === "es" ? "EN" : "ES";
+---
+
+<a class="lang-switcher" href={`/${otherLocale}`} title={otherLocale.toUpperCase()}>
+  <span>{switchLabel}</span>
+</a>
+
+<style>
+  .lang-switcher {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-xs) var(--space-sm);
+    border: 1px solid var(--border-visible);
+    border-radius: 4px;
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: var(--label);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-label);
+    transition: all var(--duration-fast) var(--ease-out);
+  }
+  .lang-switcher:hover {
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+  }
+</style>

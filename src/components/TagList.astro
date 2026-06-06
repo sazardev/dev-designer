@@ -1,0 +1,41 @@
+---
+interface Props {
+  tags: string[];
+  locale: string;
+}
+
+const { tags, locale } = Astro.props;
+---
+
+<div class="tag-list">
+  {
+    tags.map((tag) => (
+      <a class="tag" href={`/${locale}/blog?tag=${tag}`}>
+        #{tag}
+      </a>
+    ))
+  }
+</div>
+
+<style>
+  .tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+  .tag {
+    display: inline-block;
+    padding: var(--space-xs) var(--space-sm);
+    font-family: var(--font-mono);
+    font-size: var(--caption);
+    text-decoration: none;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    transition: all var(--duration-fast) var(--ease-out);
+  }
+  .tag:hover {
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+  }
+</style>

@@ -1,0 +1,107 @@
+---
+title: "Singleton Pattern in TypeScript"
+description: "Ensuring a single instance of a class with global access and thread-safety"
+pubDate: "2024-06-15"
+updatedDate: "2024-06-20"
+heroImage: "../../../assets/blog-placeholder-1.jpg"
+locale: "en"
+author: "sarah-chen"
+tags: ["typescript", "design-patterns", "singleton", "creational"]
+category: "design-patterns"
+difficulty: "intermediate"
+featured: true
+relatedPosts: ["clean-architecture"]
+---
+
+## What is the Singleton?
+
+The Singleton is a **creational** design pattern that ensures a class has only one instance and provides a global access point to it.
+
+## Class Diagram
+
+```mermaid
+classDiagram
+    class Singleton {
+        -Singleton$ instance
+        -String config
+        -Singleton()
+        +Singleton$ getInstance() Singleton
+        +getConfig() String
+        +setConfig(String) void
+    }
+    class Client {
+        +main() void
+    }
+    Client --> Singleton : uses
+```
+
+## Implementation
+
+```typescript
+class Singleton {
+  private static instance: Singleton;
+  private config: string;
+
+  private constructor() {
+    this.config = "default";
+  }
+
+  public static getInstance(): Singleton {
+    if (!Singleton.instance) {
+      Singleton.instance = new Singleton();
+    }
+    return Singleton.instance;
+  }
+
+  public getConfig(): string {
+    return this.config;
+  }
+
+  public setConfig(config: string): void {
+    this.config = config;
+  }
+}
+```
+
+## Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Singleton
+    C->>S: getInstance()
+    alt First call
+        S-->>S: create instance
+    end
+    S-->>C: instance
+    C->>S: getConfig()
+    S-->>C: config
+```
+
+## Use Cases
+
+- Database connection pooling
+- Global logger
+- Application configuration
+- Shared cache
+
+## When to Use?
+
+| Situation                  | Use Singleton    |
+| -------------------------- | ---------------- |
+| Single instance needed     | ✅               |
+| Coordinated global access  | ✅               |
+| Multiple instances allowed | ❌               |
+| Easy testing required      | ⚠️ (consider DI) |
+
+## Decision Flowchart
+
+```mermaid
+flowchart TD
+    A[Need a single instance?] --> B{Thread-safe?}
+    B -->|No| C[Use simple Singleton]
+    B -->|Yes| D[Use double-check locking Singleton]
+    C --> E[Implement]
+    D --> E
+    E --> F[Testing with Mock]
+```

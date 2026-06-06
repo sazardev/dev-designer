@@ -1,0 +1,107 @@
+---
+title: "Singleton Pattern en TypeScript"
+description: "Garantiza una única instancia de una clase con acceso global y thread-safety"
+pubDate: "2024-06-15"
+updatedDate: "2024-06-20"
+heroImage: "../../../assets/blog-placeholder-1.jpg"
+locale: "es"
+author: "sarah-chen"
+tags: ["typescript", "design-patterns", "singleton", "creational"]
+category: "design-patterns"
+difficulty: "intermediate"
+featured: true
+relatedPosts: ["clean-architecture"]
+---
+
+## ¿Qué es el Singleton?
+
+El Singleton es un patrón de diseño **creacional** que garantiza que una clase tenga una única instancia y proporciona un punto de acceso global a ella.
+
+## Diagrama de Clases
+
+```mermaid
+classDiagram
+    class Singleton {
+        -Singleton$ instance
+        -String config
+        -Singleton()
+        +Singleton$ getInstance() Singleton
+        +getConfig() String
+        +setConfig(String) void
+    }
+    class Client {
+        +main() void
+    }
+    Client --> Singleton : usa
+```
+
+## Implementación
+
+```typescript
+class Singleton {
+  private static instance: Singleton;
+  private config: string;
+
+  private constructor() {
+    this.config = "default";
+  }
+
+  public static getInstance(): Singleton {
+    if (!Singleton.instance) {
+      Singleton.instance = new Singleton();
+    }
+    return Singleton.instance;
+  }
+
+  public getConfig(): string {
+    return this.config;
+  }
+
+  public setConfig(config: string): void {
+    this.config = config;
+  }
+}
+```
+
+## Diagrama de Secuencia
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant S as Singleton
+    C->>S: getInstance()
+    alt Primera llamada
+        S-->>S: crear instancia
+    end
+    S-->>C: instance
+    C->>S: getConfig()
+    S-->>C: config
+```
+
+## Casos de Uso
+
+- Conexión a base de datos
+- Logger global
+- Configuración de la aplicación
+- Cache compartida
+
+## ¿Cuándo Usar?
+
+| Situación                       | Usar Singleton     |
+| ------------------------------- | ------------------ |
+| Una sola instancia necesaria    | ✅                 |
+| Acceso global coordinado        | ✅                 |
+| Múltiples instancias permitidas | ❌                 |
+| Testing fácil requerido         | ⚠️ (considerar DI) |
+
+## Flujograma de Decisión
+
+```mermaid
+flowchart TD
+    A[Necesitas una sola instancia?] --> B{¿Es thread-safe?}
+    B -->|No| C[Usa Singleton simple]
+    B -->|Sí| D[Usa Singleton con double-check locking]
+    C --> E[Implementar]
+    D --> E
+    E --> F[Testing con Mock]
+```
