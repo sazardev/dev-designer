@@ -1,3 +1,5 @@
 npx eslint . --max-warnings=0
 npx prettier --check "src/**/*.{astro,ts,tsx,js,jsx,mdx}"
 npx astro check
+bash scripts/check-routes.sh
+bash scripts/check-links.sh

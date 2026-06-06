@@ -10,7 +10,7 @@ const { tags, locale } = Astro.props;
 <div class="tag-list">
   {
     tags.map((tag) => (
-      <a class="tag" href={`/${locale}/blog?tag=${tag}`}>
+      <a class="tag" href={`/${locale}/blog#${tag}`}>
         #{tag}
       </a>
     ))

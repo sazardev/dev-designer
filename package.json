@@ -19,7 +19,8 @@
     "knip": "knip",
     "check:links": "node scripts/check-links.mjs",
     "check:routes": "node scripts/check-routes.mjs",
-    "check:all": "bash scripts/check-links.sh",
+    "check:routes-bash": "bash scripts/check-routes.sh",
+    "check:all": "bash scripts/check-links.sh && bash scripts/check-routes.sh",
     "audit": "npm run check && npm run lint && npm run format:check && npm run knip && npm run check:routes && npm run build && npm run check:links && npm run check:all",
     "fix": "npm run lint:fix && npm run format"
   },

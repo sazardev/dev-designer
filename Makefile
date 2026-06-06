@@ -71,11 +71,14 @@ knip: ## Encontrar imports/exports/dependencias no usados
 check-links: ## Verificar links rotos en HTML generado (requiere build previo)
 	npm run check:links
 
-check-routes: ## Analizar rutas huérfanas en el código fuente
+check-routes: ## Analizar rutas huérfanas en el código fuente (JS)
 	npm run check:routes
 
+check-routes-strict: ## Validador ultra-agresivo de rutas (undefined, doble locale, href rotos)
+	bash scripts/check-routes.sh
+
 check-all: ## Auditoría completa de links, rutas, authors, i18n, frontmatter
-	npm run check:all
+	npm run check:all && bash scripts/check-routes.sh
 
 # ============================================================================
 # AUDITORÍA COMPLETA
@@ -92,11 +95,13 @@ audit: ## Ejecutar TODOS los checks (type, lint, format, knip, routes, build, li
 	npm run format:check
 	@printf "\033[1;33m[4/7]\033[0m Knip (código muerto)...\n"
 	npm run knip
-	@printf "\033[1;33m[5/7]\033[0m Route analyzer...\n"
+	@printf "\033[1;33m[5/8]\033[0m Route analyzer (JS)...\n"
 	npm run check:routes
-	@printf "\033[1;33m[6/7]\033[0m Build...\n"
+	@printf "\033[1;33m[6/8]\033[0m Route validator (bash)...\n"
+	bash scripts/check-routes.sh
+	@printf "\033[1;33m[7/8]\033[0m Build...\n"
 	npm run build
-	@printf "\033[1;33m[7/7]\033[0m Link checker...\n"
+	@printf "\033[1;33m[8/8]\033[0m Link checker...\n"
 	@echo ""
 	@printf "\033[0;32m\033[1m✔ Auditoría completada exitosamente\033[0m\n"
 
