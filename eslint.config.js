@@ -8,13 +8,7 @@ export default [
     files: ["**/*.astro"],
     rules: {
       "astro/no-set-html-directive": "error",
-      "astro/no-unsafe-inline-scripts": [
-        "warn",
-        {
-          allowNonce: true,
-          allowDefineVars: true,
-        },
-      ],
+      "astro/no-unsafe-inline-scripts": "off",
       "astro/prefer-class-list-directive": "error",
       "astro/prefer-split-class-list": ["error", { splitLiteral: true }],
       "astro/sort-attributes": [

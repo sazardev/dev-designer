@@ -47,7 +47,7 @@ const t = useTranslations(locale);
 
 <script>
   document.getElementById("header-search-btn")?.addEventListener("click", () => {
-    (window as any).openSearch?.();
+    (window as unknown as { openSearch?: () => void }).openSearch?.();
   });
 </script>
 

@@ -58,7 +58,7 @@ const t = useTranslations(locale);
     }
   }
 
-  (window as any).openSearch = openSearch;
+  (window as unknown as { openSearch: () => void }).openSearch = openSearch;
 
   document.getElementById("close-search")?.addEventListener("click", closeSearch);
   document.getElementById("search-overlay")?.addEventListener("click", (e) => {
